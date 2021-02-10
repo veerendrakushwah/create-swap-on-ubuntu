@@ -1,0 +1,62 @@
+#First check if the system has any swap configured
+
+swapon --show
+
+# We will use the fallocate program to create a swap file. Best practice is to create a swap file double the amount of your RAM. 
+If you have 1024MB of RAM, create a 2GB swap file.
+
+sudo fallocate -l 2G /swapfile
+
+# Now check if the file was created.
+
+ls -lh /swapfile
+
+# Make the swap file only accessible to root.
+
+sudo chmod 600 /swapfile
+
+# Mark the file as a swap file.
+
+sudo mkswap /swapfile
+
+# If it was successful, you should see something like
+# Setting up swapspace version 1, size = 2 GiB (2147479552 bytes)
+# no label, UUID=00aafaee-51c9-46b3-a0fc-8240c134048e
+
+# Finally we will tell the system to start using our new swap file,
+
+sudo swapon /swapfile
+
+# To verify that the swap is now available type:
+
+sudo swapon --show
+
+# Result:
+
+NAME      TYPE  SIZE USED PRIO
+/swapfile file  2G   0B   -2
+
+free -h
+
+# Result:
+
+              total        used        free      shared  buff/cache   available
+Mem:           985M        418M        104M         26M        462M        392M
+Swap:          2.0G          0B        2.0G
+
+# This swap will only last until next reboot. In order to make it permanent, we will add it to the /etc/fstab file.
+
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+
+# For a server, you should change the swappiness value to 10.
+
+sudo sysctl vm.swappiness=10
+
+# Now change the vfs_cache_pressure value to 50.
+
+sudo sysctl vm.vfs_cache_pressure=50
+
+# To make these two settings persist after next reboot, edit the following file:
+
+sudo nano /etc/sysctl.conf
+
